@@ -376,93 +376,22 @@
       color: var(--accent); margin-bottom: 10px;
     }
 
-    /* Annotations section */
-    .annotations-section { margin-bottom: 20px; }
-    .annotations-section h4 {
-      font-size: 12px; font-weight: 600;
-      text-transform: uppercase; letter-spacing: 0.06em;
-      color: var(--muted); margin-bottom: 12px;
+    /* Expert insight section */
+    .expert-insight {
+      background: linear-gradient(135deg, rgba(139,92,246,0.08), rgba(59,130,246,0.06));
+      border-left: 3px solid #8b5cf6;
+      border-radius: 0 8px 8px 0;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      font-size: 14px; line-height: 1.75;
+      color: var(--text);
+    }
+    .expert-insight-label {
       display: flex; align-items: center; gap: 6px;
+      font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: #8b5cf6; margin-bottom: 10px;
     }
-    .annotation-card {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 14px;
-      margin-bottom: 8px;
-    }
-    .annotation-header {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 8px;
-    }
-    .annotation-author {
-      font-size: 12px; font-weight: 600; color: var(--text);
-    }
-    .annotation-type {
-      font-size: 10px; font-weight: 600;
-      text-transform: uppercase; letter-spacing: 0.05em;
-      padding: 2px 8px; border-radius: 10px;
-    }
-    .annotation-type-impact { background: rgba(59,130,246,0.12); color: #3b82f6; }
-    .annotation-type-clarification { background: rgba(16,185,129,0.12); color: #10b981; }
-    .annotation-type-warning { background: rgba(245,158,11,0.12); color: #f59e0b; }
-    .annotation-type-example { background: rgba(139,92,246,0.12); color: #8b5cf6; }
-    .annotation-content {
-      font-size: 13px; line-height: 1.65;
-      color: var(--text-secondary);
-    }
-    .annotation-footer {
-      display: flex; align-items: center; gap: 12px;
-      margin-top: 10px;
-    }
-    .upvote-btn {
-      display: flex; align-items: center; gap: 4px;
-      background: none; border: 1px solid var(--border);
-      border-radius: 14px; padding: 3px 10px;
-      font-size: 11px; color: var(--muted);
-      cursor: pointer; font-family: inherit;
-      transition: all 0.15s;
-    }
-    .upvote-btn:hover { border-color: var(--accent); color: var(--accent); }
-    .upvote-btn.voted { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
-
-    /* Add annotation form */
-    .add-annotation {
-      border: 1px dashed var(--border);
-      border-radius: 8px;
-      padding: 14px;
-      margin-top: 8px;
-    }
-    .add-annotation textarea {
-      width: 100%; border: 1px solid var(--border);
-      border-radius: 6px; padding: 10px;
-      font-size: 13px; font-family: inherit;
-      background: var(--surface); color: var(--text);
-      resize: vertical; min-height: 70px;
-      outline: none;
-    }
-    .add-annotation textarea:focus { border-color: var(--accent); }
-    .add-annotation-controls {
-      display: flex; gap: 8px; margin-top: 8px; align-items: center;
-    }
-    .add-annotation-controls input,
-    .add-annotation-controls select {
-      padding: 6px 10px; border: 1px solid var(--border);
-      border-radius: 6px; font-size: 12px; font-family: inherit;
-      background: var(--surface); color: var(--text);
-      outline: none;
-    }
-    .add-annotation-controls input:focus,
-    .add-annotation-controls select:focus { border-color: var(--accent); }
-    .submit-annotation {
-      padding: 6px 14px; border-radius: 6px;
-      background: var(--accent); color: #fff;
-      border: none; font-size: 12px; font-weight: 600;
-      cursor: pointer; font-family: inherit;
-      transition: opacity 0.15s;
-    }
-    .submit-annotation:hover { opacity: 0.9; }
-    .submit-annotation:disabled { opacity: 0.5; cursor: not-allowed; }
 
     /* Key changes / diff view */
     .diff-section { margin-bottom: 20px; }
@@ -695,16 +624,8 @@ function DetailModal({ circular: c, tags, circulars, onClose, onNavigate }) {
   if (!c) return null;
   const circularTags = (c.tags || []).map(t => tags.find(tg => tg.id === t.tag_id)).filter(Boolean);
   const [activeTab, setActiveTab] = useState('overview');
-  const [annotations, setAnnotations] = useState([]);
   const [relations, setRelations] = useState([]);
   const [loadingExtra, setLoadingExtra] = useState(true);
-  const [votedIds, setVotedIds] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('pp-votes') || '[]'); } catch { return []; }
-  });
-
-  // Annotation form state
-  const [newAnnotation, setNewAnnotation] = useState({ content: '', author_name: '', annotation_type: 'impact' });
-  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') onClose(); };
@@ -716,45 +637,17 @@ function DetailModal({ circular: c, tags, circulars, onClose, onNavigate }) {
     };
   }, [onClose]);
 
-  // Fetch annotations and relations
+  // Fetch relations
   useEffect(() => {
     async function loadExtra() {
       setLoadingExtra(true);
-      const [annRes, relRes] = await Promise.all([
-        sb.from('annotations').select('*').eq('circular_id', c.id).order('upvotes', { ascending: false }),
-        sb.from('circular_relations').select('*').or(`source_circular_id.eq.${c.id},target_circular_id.eq.${c.id}`),
-      ]);
-      if (annRes.data) setAnnotations(annRes.data);
+      const relRes = await sb.from('circular_relations').select('*').or(`source_circular_id.eq.${c.id},target_circular_id.eq.${c.id}`);
       if (relRes.data) setRelations(relRes.data);
       setLoadingExtra(false);
     }
     loadExtra();
     setActiveTab('overview');
   }, [c.id]);
-
-  const handleUpvote = async (ann) => {
-    if (votedIds.includes(ann.id)) return;
-    const newVotes = [...votedIds, ann.id];
-    setVotedIds(newVotes);
-    localStorage.setItem('pp-votes', JSON.stringify(newVotes));
-    setAnnotations(prev => prev.map(a => a.id === ann.id ? { ...a, upvotes: a.upvotes + 1 } : a));
-    await sb.from('annotations').update({ upvotes: ann.upvotes + 1 }).eq('id', ann.id);
-  };
-
-  const handleSubmitAnnotation = async () => {
-    if (!newAnnotation.content.trim()) return;
-    setSubmitting(true);
-    const payload = {
-      circular_id: c.id,
-      content: newAnnotation.content.trim(),
-      author_name: newAnnotation.author_name.trim() || 'Anonymous',
-      annotation_type: newAnnotation.annotation_type,
-    };
-    const { data } = await sb.from('annotations').insert(payload).select().single();
-    if (data) setAnnotations(prev => [...prev, data]);
-    setNewAnnotation({ content: '', author_name: '', annotation_type: 'impact' });
-    setSubmitting(false);
-  };
 
   // Build related circulars with context
   const relatedCirculars = relations.map(r => {
@@ -791,10 +684,6 @@ function DetailModal({ circular: c, tags, circulars, onClose, onNavigate }) {
         <div className="modal-tabs">
           <button className={`modal-tab ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>
             Overview
-          </button>
-          <button className={`modal-tab ${activeTab === 'annotations' ? 'active' : ''}`} onClick={() => setActiveTab('annotations')}>
-            Annotations
-            {annotations.length > 0 && <span className="modal-tab-badge">{annotations.length}</span>}
           </button>
           {keyChanges.length > 0 && (
             <button className={`modal-tab ${activeTab === 'changes' ? 'active' : ''}`} onClick={() => setActiveTab('changes')}>
@@ -858,25 +747,14 @@ function DetailModal({ circular: c, tags, circulars, onClose, onNavigate }) {
                 </div>
               )}
 
-              {/* Quick preview of annotations if any */}
-              {annotations.length > 0 && (
-                <div style={{ marginBottom: 20 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                    <h4 style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-                      Top Expert Insight
-                    </h4>
-                    <button style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }} onClick={() => setActiveTab('annotations')}>
-                      View all {annotations.length} →
-                    </button>
+              {/* Expert Insight */}
+              {c.expert_insight && (
+                <div className="expert-insight">
+                  <div className="expert-insight-label">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+                    Expert Insight
                   </div>
-                  <div className="annotation-card">
-                    <div className="annotation-header">
-                      <span className="annotation-author">{annotations[0].author_name}</span>
-                      <span className={`annotation-type annotation-type-${annotations[0].annotation_type}`}>{annotations[0].annotation_type}</span>
-                    </div>
-                    <div className="annotation-content">{annotations[0].content}</div>
-                  </div>
+                  {c.expert_insight}
                 </div>
               )}
 
@@ -891,78 +769,6 @@ function DetailModal({ circular: c, tags, circulars, onClose, onNavigate }) {
                 </div>
               )}
             </>
-          )}
-
-          {/* ─── Annotations Tab ─── */}
-          {activeTab === 'annotations' && (
-            <div className="annotations-section">
-              <h4>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-                Expert & Community Annotations
-              </h4>
-
-              {annotations.length === 0 && !loadingExtra && (
-                <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 16 }}>No annotations yet. Be the first to share your analysis.</p>
-              )}
-
-              {annotations.map(ann => (
-                <div key={ann.id} className="annotation-card">
-                  <div className="annotation-header">
-                    <span className="annotation-author">{ann.author_name}</span>
-                    <span className={`annotation-type annotation-type-${ann.annotation_type}`}>{ann.annotation_type}</span>
-                  </div>
-                  <div className="annotation-content">{ann.content}</div>
-                  <div className="annotation-footer">
-                    <button
-                      className={`upvote-btn ${votedIds.includes(ann.id) ? 'voted' : ''}`}
-                      onClick={() => handleUpvote(ann)}
-                      disabled={votedIds.includes(ann.id)}
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z"/></svg>
-                      {ann.upvotes}
-                    </button>
-                    <span style={{ fontSize: 11, color: 'var(--muted)' }}>
-                      {new Date(ann.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </span>
-                  </div>
-                </div>
-              ))}
-
-              {/* Add annotation form */}
-              <div className="add-annotation">
-                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>Add your annotation</div>
-                <textarea
-                  placeholder="Share your analysis, impact assessment, or clarification..."
-                  value={newAnnotation.content}
-                  onChange={e => setNewAnnotation(prev => ({ ...prev, content: e.target.value }))}
-                />
-                <div className="add-annotation-controls">
-                  <input
-                    type="text"
-                    placeholder="Your name"
-                    value={newAnnotation.author_name}
-                    onChange={e => setNewAnnotation(prev => ({ ...prev, author_name: e.target.value }))}
-                    style={{ flex: 1 }}
-                  />
-                  <select
-                    value={newAnnotation.annotation_type}
-                    onChange={e => setNewAnnotation(prev => ({ ...prev, annotation_type: e.target.value }))}
-                  >
-                    <option value="impact">Impact</option>
-                    <option value="clarification">Clarification</option>
-                    <option value="warning">Warning</option>
-                    <option value="example">Example</option>
-                  </select>
-                  <button
-                    className="submit-annotation"
-                    onClick={handleSubmitAnnotation}
-                    disabled={!newAnnotation.content.trim() || submitting}
-                  >
-                    {submitting ? 'Posting...' : 'Post'}
-                  </button>
-                </div>
-              </div>
-            </div>
           )}
 
           {/* ─── What Changed Tab ─── */}
@@ -1055,7 +861,7 @@ function App() {
     async function load() {
       setLoading(true);
       const [circRes, tagRes] = await Promise.all([
-        sb.from('circulars').select('*, tags:circular_tags(tag_id), plain_summary, key_changes').order('issued_date', { ascending: false }),
+        sb.from('circulars').select('*, tags:circular_tags(tag_id), plain_summary, expert_insight, key_changes').order('issued_date', { ascending: false }),
         sb.from('tags').select('*').order('label'),
       ]);
       if (circRes.data) setCirculars(circRes.data);

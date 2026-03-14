@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Policy Pulse</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface-hover: #f1f5f9;
+      --border: #e2e8f0;
+      --border2: #cbd5e1;
+      --text: #0f172a;
+      --text-secondary: #475569;
+      --muted: #94a3b8;
+      --primary: #1e3a5f;
+      --primary-light: #2d5a8e;
+      --primary-bg: rgba(30,58,95,0.06);
+      --accent: #3b82f6;
+      --accent-bg: rgba(59,130,246,0.08);
+      --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-lg: 0 4px 12px rgba(0,0,0,0.08);
+      --radius: 10px;
+      --danger: #dc2626;
+      --danger-bg: rgba(220,38,38,0.08);
+      --success: #16a34a;
+      --success-bg: rgba(22,163,74,0.08);
+    }
+    :root.dark {
+      --bg: #0c1222;
+      --surface: #131c31;
+      --surface-hover: #1a2540;
+      --border: #1e2d4a;
+      --border2: #2a3f66;
+      --text: #e2e8f0;
+      --text-secondary: #94a3b8;
+      --muted: #64748b;
+      --primary: #60a5fa;
+      --primary-light: #93c5fd;
+      --primary-bg: rgba(96,165,250,0.1);
+      --accent: #60a5fa;
+      --accent-bg: rgba(96,165,250,0.1);
+      --shadow: 0 1px 3px rgba(0,0,0,0.3);
+      --shadow-lg: 0 4px 12px rgba(0,0,0,0.4);
+      --danger: #f87171;
+      --danger-bg: rgba(248,113,113,0.1);
+      --success: #4ade80;
+      --success-bg: rgba(74,222,128,0.1);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+    .header {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--primary);
+      color: #fff;
+      padding: 0 24px;
+      height: 56px;
+      display: flex; align-items: center; justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .header-logo {
+      font-size: 18px; font-weight: 700; letter-spacing: -0.3px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .header-subtitle { font-size: 11px; opacity: 0.7; font-weight: 400; }
+    .header-actions { display: flex; align-items: center; gap: 8px; }
+    .icon-btn {
+      background: rgba(255,255,255,0.12); border: none; color: #fff;
+      width: 36px; height: 36px; border-radius: 8px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s; text-decoration: none;
+    }
+    .icon-btn:hover { background: rgba(255,255,255,0.2); }
+
+    /* Layout */
+    .container { max-width: 960px; margin: 0 auto; padding: 24px; }
+
+    /* Password gate */
+    .gate {
+      display: flex; align-items: center; justify-content: center;
+      min-height: calc(100vh - 56px);
+    }
+    .gate-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 40px;
+      width: 100%; max-width: 400px;
+      box-shadow: var(--shadow-lg);
+      text-align: center;
+    }
+    .gate-box h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .gate-box p { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+
+    /* Forms */
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block; font-size: 12px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.04em;
+      color: var(--muted); margin-bottom: 6px;
+    }
+    .form-input {
+      width: 100%; padding: 10px 14px;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text);
+      font-size: 14px; font-family: inherit;
+      transition: border-color 0.15s;
+      outline: none;
+    }
+    .form-input:focus { border-color: var(--accent); }
+    textarea.form-input { min-height: 100px; resize: vertical; }
+    select.form-input { cursor: pointer; }
+
+    .form-row {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    }
+    @media (max-width: 640px) {
+      .form-row { grid-template-columns: 1fr; }
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 10px 20px; border-radius: 8px;
+      font-size: 13px; font-weight: 600; font-family: inherit;
+      cursor: pointer; border: 1px solid transparent;
+      transition: all 0.15s;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-secondary { background: var(--surface); color: var(--text); border-color: var(--border); }
+    .btn-secondary:hover { background: var(--surface-hover); }
+    .btn-danger { background: var(--danger-bg); color: var(--danger); }
+    .btn-danger:hover { opacity: 0.8; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Tabs */
+    .tabs {
+      display: flex; gap: 4px; margin-bottom: 24px;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 0;
+    }
+    .tab {
+      padding: 10px 20px; font-size: 13px; font-weight: 600;
+      background: none; border: none; color: var(--muted);
+      cursor: pointer; font-family: inherit;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px; transition: all 0.15s;
+    }
+    .tab:hover { color: var(--text-secondary); }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* Card / Panel */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow);
+    }
+    .panel h3 {
+      font-size: 16px; font-weight: 700; margin-bottom: 16px;
+    }
+
+    /* Circular list */
+    .circ-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+    }
+    .circ-row:last-child { border-bottom: none; }
+    .circ-info { flex: 1; min-width: 0; }
+    .circ-number {
+      font-size: 11px; font-weight: 600; color: var(--accent);
+      text-transform: uppercase; letter-spacing: 0.02em;
+    }
+    .circ-title {
+      font-size: 13px; font-weight: 500; color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .circ-meta { font-size: 11px; color: var(--muted); }
+    .circ-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+    /* Tag chips for management */
+    .tag-grid {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;
+    }
+    .tag-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px; border-radius: 20px;
+      font-size: 12px; font-weight: 600;
+      cursor: pointer; border: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .tag-chip:hover { opacity: 0.8; }
+
+    /* Checkboxes for tag selection */
+    .checkbox-grid {
+      display: flex; flex-wrap: wrap; gap: 8px;
+    }
+    .checkbox-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 14px; border-radius: 20px;
+      font-size: 12px; font-weight: 500;
+      cursor: pointer;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--text-secondary);
+      transition: all 0.15s;
+      user-select: none;
+    }
+    .checkbox-tag.selected {
+      border-color: currentColor;
+      color: #fff;
+    }
+    .checkbox-tag .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+    }
+    .checkbox-tag .check-icon {
+      width: 14px; height: 14px;
+    }
+
+    /* Toast */
+    .toast-container {
+      position: fixed; bottom: 24px; right: 24px; z-index: 999;
+      display: flex; flex-direction: column; gap: 8px;
+      pointer-events: none;
+    }
+    .toast {
+      padding: 12px 20px; border-radius: 8px;
+      font-size: 13px; font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      animation: toast-in 0.3s ease;
+      pointer-events: auto;
+    }
+    .toast-success { background: var(--success); color: #fff; }
+    .toast-error { background: var(--danger); color: #fff; }
+    @keyframes toast-in {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Spinner */
+    .spinner { display: flex; justify-content: center; padding: 40px; }
+    .spinner::after {
+      content: ''; width: 28px; height: 28px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Confirm dialog */
+    .confirm-overlay {
+      position: fixed; inset: 0; z-index: 300;
+      background: rgba(0,0,0,0.5);
+      display: flex; align-items: center; justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    .confirm-box {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 28px;
+      max-width: 400px; width: 90%;
+      box-shadow: var(--shadow-lg);
+      text-align: center;
+    }
+    .confirm-box h3 { font-size: 16px; margin-bottom: 8px; }
+    .confirm-box p { font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; }
+    .confirm-actions { display: flex; gap: 8px; justify-content: center; }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .header { padding: 0 16px; }
+      .container { padding: 16px; }
+      .panel { padding: 16px; }
+      .header-subtitle { display: none; }
+      .tabs { overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-type="module">
+const { useState, useEffect, useMemo, useCallback, useRef } = React;
+
+/*
+ * NOTE: This admin page uses the Supabase anon key for writes.
+ * In production, replace this with proper authentication (e.g. Supabase Auth
+ * with RLS policies that restrict INSERT/UPDATE/DELETE to authenticated admin users).
+ * The password gate below is only a superficial deterrent.
+ */
+
+// --- Config ---
+const SUPABASE_URL = 'https://fkooinfagkwugdaobjra.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrb29pbmZhZ2t3dWdkYW9ianJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0ODQ4ODAsImV4cCI6MjA4OTA2MDg4MH0.CEFqNf4sOM4ssT-E-wRSIcdILMabef8KWA36jDdKgiU';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const ADMIN_PASSWORD = 'policypulse2026';
+
+// --- Icons ---
+const Icon = {
+  pulse: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>,
+  sun: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>,
+  moon: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>,
+  home: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+  edit: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+  trash: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>,
+  plus: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  check: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>,
+  lock: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>,
+  upload: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
+  logout: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
+};
+
+// --- Toast system ---
+let toastId = 0;
+function useToast() {
+  const [toasts, setToasts] = useState([]);
+  const add = useCallback((message, type = 'success') => {
+    const id = ++toastId;
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3500);
+  }, []);
+  return { toasts, toast: add };
+}
+
+function ToastContainer({ toasts }) {
+  return (
+    <div className="toast-container">
+      {toasts.map(t => (
+        <div key={t.id} className={`toast toast-${t.type}`}>{t.message}</div>
+      ))}
+    </div>
+  );
+}
+
+// --- Confirm dialog ---
+function ConfirmDialog({ title, message, onConfirm, onCancel }) {
+  return (
+    <div className="confirm-overlay" onClick={onCancel}>
+      <div className="confirm-box" onClick={e => e.stopPropagation()}>
+        <h3>{title}</h3>
+        <p>{message}</p>
+        <div className="confirm-actions">
+          <button className="btn btn-secondary" onClick={onCancel}>Cancel</button>
+          <button className="btn btn-danger" onClick={onConfirm}>Delete</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- Empty circular form state ---
+function emptyCircular() {
+  return {
+    circular_number: '', title: '', title_bn: '', summary: '',
+    issued_date: '', effective_date: '', department: '',
+    source_url: '', pdf_url_en: '', pdf_url_bn: '',
+    pdf_storage_path: '', full_text: '', status: 'active',
+    superseded_by: '',
+  };
+}
+
+// --- Circular Form ---
+function CircularForm({ initial, tags, selectedTagIds, onSave, onCancel, saving }) {
+  const [form, setForm] = useState(initial || emptyCircular());
+  const [selTags, setSelTags] = useState(selectedTagIds || []);
+
+  useEffect(() => {
+    setForm(initial || emptyCircular());
+    setSelTags(selectedTagIds || []);
+  }, [initial, selectedTagIds]);
+
+  const set = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
+
+  const toggleTag = (tagId) => {
+    setSelTags(prev => prev.includes(tagId) ? prev.filter(t => t !== tagId) : [...prev, tagId]);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(form, selTags);
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <div className="form-row">
+        <div className="form-group">
+          <label>Circular Number *</label>
+          <input className="form-input" required value={form.circular_number} onChange={e => set('circular_number', e.target.value)} placeholder="e.g. BRPD Circular No. 01/2026" />
+        </div>
+        <div className="form-group">
+          <label>Status</label>
+          <select className="form-input" value={form.status} onChange={e => set('status', e.target.value)}>
+            <option value="active">Active</option>
+            <option value="superseded">Superseded</option>
+            <option value="amended">Amended</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="form-group">
+        <label>Title (English) *</label>
+        <input className="form-input" required value={form.title} onChange={e => set('title', e.target.value)} placeholder="Circular title in English" />
+      </div>
+
+      <div className="form-group">
+        <label>Title (Bangla)</label>
+        <input className="form-input" value={form.title_bn} onChange={e => set('title_bn', e.target.value)} placeholder="Circular title in Bangla" />
+      </div>
+
+      <div className="form-group">
+        <label>Summary</label>
+        <textarea className="form-input" value={form.summary} onChange={e => set('summary', e.target.value)} placeholder="Brief summary of the circular..." />
+      </div>
+
+      <div className="form-row">
+        <div className="form-group">
+          <label>Issued Date *</label>
+          <input className="form-input" type="date" required value={form.issued_date} onChange={e => set('issued_date', e.target.value)} />
+        </div>
+        <div className="form-group">
+          <label>Effective Date</label>
+          <input className="form-input" type="date" value={form.effective_date} onChange={e => set('effective_date', e.target.value)} />
+        </div>
+      </div>
+
+      <div className="form-row">
+        <div className="form-group">
+          <label>Department *</label>
+          <input className="form-input" required value={form.department} onChange={e => set('department', e.target.value)} placeholder="e.g. BRPD, DFIM, DOS" />
+        </div>
+        <div className="form-group">
+          <label>Superseded By (UUID)</label>
+          <input className="form-input" value={form.superseded_by} onChange={e => set('superseded_by', e.target.value)} placeholder="UUID of superseding circular" />
+        </div>
+      </div>
+
+      <div className="form-group">
+        <label>Source URL</label>
+        <input className="form-input" type="url" value={form.source_url} onChange={e => set('source_url', e.target.value)} placeholder="https://www.bb.org.bd/..." />
+      </div>
+
+      <div className="form-row">
+        <div className="form-group">
+          <label>PDF URL (English)</label>
+          <input className="form-input" type="url" value={form.pdf_url_en} onChange={e => set('pdf_url_en', e.target.value)} placeholder="https://..." />
+        </div>
+        <div className="form-group">
+          <label>PDF URL (Bangla)</label>
+          <input className="form-input" type="url" value={form.pdf_url_bn} onChange={e => set('pdf_url_bn', e.target.value)} placeholder="https://..." />
+        </div>
+      </div>
+
+      <div className="form-group">
+        <label>PDF Storage Path</label>
+        <input className="form-input" value={form.pdf_storage_path} onChange={e => set('pdf_storage_path', e.target.value)} placeholder="circulars/2026/file.pdf" />
+      </div>
+
+      <div className="form-group">
+        <label>Full Text</label>
+        <textarea className="form-input" style={{ minHeight: 150 }} value={form.full_text} onChange={e => set('full_text', e.target.value)} placeholder="Full text content of the circular..." />
+      </div>
+
+      {tags.length > 0 && (
+        <div className="form-group">
+          <label>Tags</label>
+          <div className="checkbox-grid">
+            {tags.map(tag => {
+              const selected = selTags.includes(tag.id);
+              return (
+                <div
+                  key={tag.id}
+                  className={`checkbox-tag ${selected ? 'selected' : ''}`}
+                  style={selected ? { background: tag.color, borderColor: tag.color, color: '#fff' } : {}}
+                  onClick={() => toggleTag(tag.id)}
+                >
+                  {selected
+                    ? <Icon.check />
+                    : <span className="dot" style={{ background: tag.color }} />
+                  }
+                  {tag.label}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
+        <button type="submit" className="btn btn-primary" disabled={saving}>
+          {saving ? 'Saving...' : (initial?.id ? 'Update Circular' : 'Add Circular')}
+        </button>
+        {onCancel && (
+          <button type="button" className="btn btn-secondary" onClick={onCancel}>Cancel</button>
+        )}
+      </div>
+    </form>
+  );
+}
+
+// --- Tag Manager ---
+function TagManager({ tags, onRefresh, toast }) {
+  const [form, setForm] = useState({ slug: '', label: '', color: '#3b82f6', description: '' });
+  const [editing, setEditing] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!form.slug || !form.label) { toast('Slug and label are required', 'error'); return; }
+    setSaving(true);
+    try {
+      if (editing) {
+        const { error } = await sb.from('tags').update({
+          slug: form.slug, label: form.label, color: form.color, description: form.description
+        }).eq('id', editing);
+        if (error) throw error;
+        toast('Tag updated');
+      } else {
+        const { error } = await sb.from('tags').insert({
+          slug: form.slug, label: form.label, color: form.color, description: form.description
+        });
+        if (error) throw error;
+        toast('Tag created');
+      }
+      setForm({ slug: '', label: '', color: '#3b82f6', description: '' });
+      setEditing(null);
+      onRefresh();
+    } catch (err) {
+      toast(err.message, 'error');
+    }
+    setSaving(false);
+  };
+
+  const startEdit = (tag) => {
+    setEditing(tag.id);
+    setForm({ slug: tag.slug, label: tag.label, color: tag.color || '#3b82f6', description: tag.description || '' });
+  };
+
+  const cancelEdit = () => {
+    setEditing(null);
+    setForm({ slug: '', label: '', color: '#3b82f6', description: '' });
+  };
+
+  const deleteTag = async (id) => {
+    try {
+      await sb.from('circular_tags').delete().eq('tag_id', id);
+      const { error } = await sb.from('tags').delete().eq('id', id);
+      if (error) throw error;
+      toast('Tag deleted');
+      onRefresh();
+    } catch (err) {
+      toast(err.message, 'error');
+    }
+  };
+
+  return (
+    <div>
+      <div className="tag-grid" style={{ marginBottom: 20 }}>
+        {tags.map(tag => (
+          <div key={tag.id} className="tag-chip" style={{ background: tag.color + '20', color: tag.color }}>
+            <span className="dot" style={{ background: tag.color, width: 8, height: 8, borderRadius: '50%', display: 'inline-block' }} />
+            {tag.label}
+            <button onClick={() => startEdit(tag)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: 0, display: 'flex' }}>
+              <Icon.edit />
+            </button>
+            <button onClick={() => deleteTag(tag.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: 0, display: 'flex', opacity: 0.6 }}>
+              <Icon.trash />
+            </button>
+          </div>
+        ))}
+        {tags.length === 0 && <p style={{ color: 'var(--muted)', fontSize: 13 }}>No tags yet.</p>}
+      </div>
+
+      <div className="panel">
+        <h3>{editing ? 'Edit Tag' : 'Add New Tag'}</h3>
+        <div className="form-row">
+          <div className="form-group">
+            <label>Slug</label>
+            <input className="form-input" value={form.slug} onChange={e => setForm(f => ({ ...f, slug: e.target.value }))} placeholder="e.g. forex" />
+          </div>
+          <div className="form-group">
+            <label>Label</label>
+            <input className="form-input" value={form.label} onChange={e => setForm(f => ({ ...f, label: e.target.value }))} placeholder="e.g. Foreign Exchange" />
+          </div>
+        </div>
+        <div className="form-row">
+          <div className="form-group">
+            <label>Color</label>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input type="color" value={form.color} onChange={e => setForm(f => ({ ...f, color: e.target.value }))} style={{ width: 40, height: 36, border: 'none', borderRadius: 6, cursor: 'pointer', background: 'transparent' }} />
+              <input className="form-input" value={form.color} onChange={e => setForm(f => ({ ...f, color: e.target.value }))} placeholder="#3b82f6" style={{ flex: 1 }} />
+            </div>
+          </div>
+          <div className="form-group">
+            <label>Description</label>
+            <input className="form-input" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Optional description" />
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+          <button className="btn btn-primary btn-sm" onClick={handleSave} disabled={saving}>
+            {saving ? 'Saving...' : (editing ? 'Update Tag' : 'Add Tag')}
+          </button>
+          {editing && <button className="btn btn-secondary btn-sm" onClick={cancelEdit}>Cancel</button>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- Bulk Import ---
+function BulkImport({ tags, onRefresh, toast }) {
+  const [json, setJson] = useState('');
+  const [importing, setImporting] = useState(false);
+
+  const handleImport = async () => {
+    let items;
+    try {
+      items = JSON.parse(json);
+      if (!Array.isArray(items)) throw new Error('Must be an array');
+    } catch (err) {
+      toast('Invalid JSON: ' + err.message, 'error');
+      return;
+    }
+
+    setImporting(true);
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const item of items) {
+      try {
+        const tagSlugs = item.tags || [];
+        const circularData = { ...item };
+        delete circularData.tags;
+        delete circularData.id;
+        delete circularData.created_at;
+        delete circularData.updated_at;
+
+        // Clean empty strings to null for optional fields
+        for (const key of Object.keys(circularData)) {
+          if (circularData[key] === '') circularData[key] = null;
+        }
+
+        const { data: inserted, error } = await sb.from('circulars').insert(circularData).select().single();
+        if (error) throw error;
+
+        // Link tags by slug
+        if (tagSlugs.length > 0 && inserted) {
+          const matchedTags = tags.filter(t => tagSlugs.includes(t.slug) || tagSlugs.includes(t.id));
+          if (matchedTags.length > 0) {
+            const links = matchedTags.map(t => ({ circular_id: inserted.id, tag_id: t.id }));
+            await sb.from('circular_tags').insert(links);
+          }
+        }
+        successCount++;
+      } catch (err) {
+        errorCount++;
+        console.error('Import error for item:', item.circular_number, err.message);
+      }
+    }
+
+    toast(`Imported ${successCount} circulars${errorCount > 0 ? `, ${errorCount} failed` : ''}`, errorCount > 0 ? 'error' : 'success');
+    if (successCount > 0) {
+      setJson('');
+      onRefresh();
+    }
+    setImporting(false);
+  };
+
+  const sampleJson = JSON.stringify([
+    {
+      circular_number: "BRPD Circular No. 01/2026",
+      title: "Sample circular title",
+      issued_date: "2026-01-15",
+      department: "BRPD",
+      status: "active",
+      summary: "Brief description...",
+      tags: ["banking-regulation"]
+    }
+  ], null, 2);
+
+  return (
+    <div>
+      <div className="panel">
+        <h3>Bulk Import Circulars</h3>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
+          Paste a JSON array of circular objects. Each object should match the circulars table schema.
+          You can include a <code style={{ background: 'var(--primary-bg)', padding: '1px 6px', borderRadius: 4 }}>tags</code> array
+          with tag slugs or IDs to auto-link tags.
+        </p>
+        <div className="form-group">
+          <label>JSON Data</label>
+          <textarea
+            className="form-input"
+            style={{ minHeight: 250, fontFamily: 'monospace', fontSize: 12 }}
+            value={json}
+            onChange={e => setJson(e.target.value)}
+            placeholder={sampleJson}
+          />
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-primary" onClick={handleImport} disabled={importing || !json.trim()}>
+            <Icon.upload />
+            {importing ? 'Importing...' : 'Import All'}
+          </button>
+          <button className="btn btn-secondary" onClick={() => setJson(sampleJson)}>
+            Load Sample
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- Main App ---
+function App() {
+  const [authed, setAuthed] = useState(() => sessionStorage.getItem('pp-admin') === 'true');
+  const [password, setPassword] = useState('');
+  const [pwError, setPwError] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('pp-dark');
+    return saved ? saved === 'true' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+
+  const [tab, setTab] = useState('circulars');
+  const [circulars, setCirculars] = useState([]);
+  const [tags, setTags] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [editingCircular, setEditingCircular] = useState(null);
+  const [editingTagIds, setEditingTagIds] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const { toasts, toast } = useToast();
+
+  // Dark mode
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', darkMode);
+    localStorage.setItem('pp-dark', darkMode);
+  }, [darkMode]);
+
+  // Fetch data
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    const [circRes, tagRes] = await Promise.all([
+      sb.from('circulars').select('*, tags:circular_tags(tag_id)').order('issued_date', { ascending: false }),
+      sb.from('tags').select('*').order('label'),
+    ]);
+    if (circRes.data) setCirculars(circRes.data);
+    if (tagRes.data) setTags(tagRes.data);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (authed) loadData();
+  }, [authed, loadData]);
+
+  // Password gate
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (password === ADMIN_PASSWORD) {
+      setAuthed(true);
+      sessionStorage.setItem('pp-admin', 'true');
+      setPwError(false);
+    } else {
+      setPwError(true);
+    }
+  };
+
+  const handleLogout = () => {
+    setAuthed(false);
+    sessionStorage.removeItem('pp-admin');
+  };
+
+  // Save circular
+  const handleSaveCircular = async (form, tagIds) => {
+    setSaving(true);
+    try {
+      const data = { ...form };
+      // Clean empties
+      for (const key of Object.keys(data)) {
+        if (data[key] === '') data[key] = null;
+      }
+      delete data.tags;
+      delete data.id;
+      delete data.created_at;
+      delete data.updated_at;
+
+      let circularId;
+
+      if (editingCircular?.id) {
+        // Update
+        const { error } = await sb.from('circulars').update(data).eq('id', editingCircular.id);
+        if (error) throw error;
+        circularId = editingCircular.id;
+
+        // Re-link tags: delete old, insert new
+        await sb.from('circular_tags').delete().eq('circular_id', circularId);
+      } else {
+        // Insert
+        const { data: inserted, error } = await sb.from('circulars').insert(data).select().single();
+        if (error) throw error;
+        circularId = inserted.id;
+      }
+
+      // Insert tag links
+      if (tagIds.length > 0) {
+        const links = tagIds.map(tid => ({ circular_id: circularId, tag_id: tid }));
+        const { error: tagErr } = await sb.from('circular_tags').insert(links);
+        if (tagErr) throw tagErr;
+      }
+
+      toast(editingCircular?.id ? 'Circular updated' : 'Circular created');
+      setEditingCircular(null);
+      setEditingTagIds([]);
+      setShowForm(false);
+      await loadData();
+    } catch (err) {
+      toast(err.message, 'error');
+    }
+    setSaving(false);
+  };
+
+  // Delete circular
+  const handleDelete = async (id) => {
+    try {
+      await sb.from('circular_tags').delete().eq('circular_id', id);
+      const { error } = await sb.from('circulars').delete().eq('id', id);
+      if (error) throw error;
+      toast('Circular deleted');
+      setConfirmDelete(null);
+      await loadData();
+    } catch (err) {
+      toast(err.message, 'error');
+    }
+  };
+
+  // Edit circular
+  const startEdit = async (circ) => {
+    const tagIds = (circ.tags || []).map(t => t.tag_id);
+    setEditingCircular(circ);
+    setEditingTagIds(tagIds);
+    setShowForm(true);
+    setTab('circulars');
+  };
+
+  // Cancel form
+  const cancelForm = () => {
+    setShowForm(false);
+    setEditingCircular(null);
+    setEditingTagIds([]);
+  };
+
+  // Filter circulars
+  const filteredCirculars = useMemo(() => {
+    if (!searchQuery.trim()) return circulars;
+    const q = searchQuery.toLowerCase();
+    return circulars.filter(c =>
+      c.title.toLowerCase().includes(q) ||
+      c.circular_number.toLowerCase().includes(q) ||
+      (c.department && c.department.toLowerCase().includes(q))
+    );
+  }, [circulars, searchQuery]);
+
+  // Format date
+  const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+
+  // --- Not authed ---
+  if (!authed) {
+    return (
+      <>
+        <header className="header">
+          <div className="header-left">
+            <div className="header-logo">
+              <Icon.pulse />
+              <div>Policy Pulse <span style={{ fontWeight: 400, fontSize: 14 }}>Admin</span>
+                <div className="header-subtitle">Bangladesh Bank Circular Tracker</div>
+              </div>
+            </div>
+          </div>
+          <div className="header-actions">
+            <a href="index.html" className="icon-btn" title="Back to site"><Icon.home /></a>
+            <button className="icon-btn" onClick={() => setDarkMode(d => !d)}>
+              {darkMode ? <Icon.sun /> : <Icon.moon />}
+            </button>
+          </div>
+        </header>
+        <div className="gate">
+          <form className="gate-box" onSubmit={handleLogin}>
+            <div style={{ marginBottom: 16, color: 'var(--accent)' }}><Icon.lock /></div>
+            <h2>Admin Access</h2>
+            <p>Enter the admin password to continue.</p>
+            <div className="form-group" style={{ textAlign: 'left' }}>
+              <input
+                className="form-input"
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={e => { setPassword(e.target.value); setPwError(false); }}
+                autoFocus
+                style={pwError ? { borderColor: 'var(--danger)' } : {}}
+              />
+              {pwError && <p style={{ color: 'var(--danger)', fontSize: 12, marginTop: 6 }}>Incorrect password.</p>}
+            </div>
+            <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>Unlock</button>
+          </form>
+        </div>
+      </>
+    );
+  }
+
+  // --- Authed ---
+  return (
+    <>
+      <header className="header">
+        <div className="header-left">
+          <div className="header-logo">
+            <Icon.pulse />
+            <div>Policy Pulse <span style={{ fontWeight: 400, fontSize: 14 }}>Admin</span>
+              <div className="header-subtitle">Bangladesh Bank Circular Tracker</div>
+            </div>
+          </div>
+        </div>
+        <div className="header-actions">
+          <a href="index.html" className="icon-btn" title="Back to site"><Icon.home /></a>
+          <button className="icon-btn" onClick={() => setDarkMode(d => !d)} title="Toggle theme">
+            {darkMode ? <Icon.sun /> : <Icon.moon />}
+          </button>
+          <button className="icon-btn" onClick={handleLogout} title="Logout">
+            <Icon.logout />
+          </button>
+        </div>
+      </header>
+
+      <div className="container">
+        <div className="tabs">
+          <button className={`tab ${tab === 'circulars' ? 'active' : ''}`} onClick={() => setTab('circulars')}>Circulars</button>
+          <button className={`tab ${tab === 'tags' ? 'active' : ''}`} onClick={() => setTab('tags')}>Tags</button>
+          <button className={`tab ${tab === 'import' ? 'active' : ''}`} onClick={() => setTab('import')}>Bulk Import</button>
+        </div>
+
+        {loading ? (
+          <div className="spinner" />
+        ) : (
+          <>
+            {/* ---- Circulars tab ---- */}
+            {tab === 'circulars' && (
+              <>
+                {showForm ? (
+                  <div className="panel">
+                    <h3>{editingCircular?.id ? 'Edit Circular' : 'Add New Circular'}</h3>
+                    <CircularForm
+                      initial={editingCircular}
+                      tags={tags}
+                      selectedTagIds={editingTagIds}
+                      onSave={handleSaveCircular}
+                      onCancel={cancelForm}
+                      saving={saving}
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+                      <button className="btn btn-primary" onClick={() => { setEditingCircular(null); setEditingTagIds([]); setShowForm(true); }}>
+                        <Icon.plus /> Add Circular
+                      </button>
+                      <input
+                        className="form-input"
+                        style={{ flex: 1, minWidth: 200 }}
+                        placeholder="Search circulars..."
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="panel" style={{ padding: 0, overflow: 'hidden' }}>
+                      {filteredCirculars.length === 0 ? (
+                        <div style={{ padding: 40, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>
+                          {circulars.length === 0 ? 'No circulars yet. Add one to get started.' : 'No circulars match your search.'}
+                        </div>
+                      ) : (
+                        <div style={{ padding: '0 16px' }}>
+                          {filteredCirculars.map(c => (
+                            <div key={c.id} className="circ-row">
+                              <div className="circ-info">
+                                <div className="circ-number">{c.circular_number}</div>
+                                <div className="circ-title">{c.title}</div>
+                                <div className="circ-meta">
+                                  {fmtDate(c.issued_date)} &middot; {c.department}
+                                  {c.status !== 'active' && (
+                                    <span style={{ marginLeft: 8, color: c.status === 'superseded' ? 'var(--danger)' : '#d97706', fontWeight: 600, textTransform: 'uppercase', fontSize: 10 }}>
+                                      {c.status}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="circ-actions">
+                                <button className="btn btn-secondary btn-sm" onClick={() => startEdit(c)}>
+                                  <Icon.edit /> Edit
+                                </button>
+                                <button className="btn btn-danger btn-sm" onClick={() => setConfirmDelete(c)}>
+                                  <Icon.trash />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ marginTop: 8, fontSize: 12, color: 'var(--muted)' }}>
+                      {filteredCirculars.length} of {circulars.length} circular{circulars.length !== 1 ? 's' : ''}
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+
+            {/* ---- Tags tab ---- */}
+            {tab === 'tags' && (
+              <TagManager tags={tags} onRefresh={loadData} toast={toast} />
+            )}
+
+            {/* ---- Bulk Import tab ---- */}
+            {tab === 'import' && (
+              <BulkImport tags={tags} onRefresh={loadData} toast={toast} />
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Delete confirmation */}
+      {confirmDelete && (
+        <ConfirmDialog
+          title="Delete Circular"
+          message={`Are you sure you want to delete "${confirmDelete.circular_number}"? This cannot be undone.`}
+          onConfirm={() => handleDelete(confirmDelete.id)}
+          onCancel={() => setConfirmDelete(null)}
+        />
+      )}
+
+      <ToastContainer toasts={toasts} />
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

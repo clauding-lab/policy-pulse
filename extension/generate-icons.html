@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head><title>Generate Extension Icons</title></head>
+<body>
+<h2>Extension Icons Generator</h2>
+<p>Click to download each icon:</p>
+<canvas id="c16" width="16" height="16"></canvas> <a id="dl16" download="icon16.png">Download 16x16</a><br><br>
+<canvas id="c48" width="48" height="48"></canvas> <a id="dl48" download="icon48.png">Download 48x48</a><br><br>
+<canvas id="c128" width="128" height="128"></canvas> <a id="dl128" download="icon128.png">Download 128x128</a>
+<script>
+function draw(id, size) {
+  const c = document.getElementById(id);
+  const ctx = c.getContext('2d');
+  const r = size * 0.15;
+
+  // Rounded rect background
+  ctx.beginPath();
+  ctx.moveTo(r, 0); ctx.lineTo(size - r, 0);
+  ctx.quadraticCurveTo(size, 0, size, r);
+  ctx.lineTo(size, size - r);
+  ctx.quadraticCurveTo(size, size, size - r, size);
+  ctx.lineTo(r, size);
+  ctx.quadraticCurveTo(0, size, 0, size - r);
+  ctx.lineTo(0, r);
+  ctx.quadraticCurveTo(0, 0, r, 0);
+  ctx.closePath();
+  ctx.fillStyle = '#1e3a5f';
+  ctx.fill();
+
+  // Pulse line
+  ctx.beginPath();
+  const y = size * 0.45;
+  const s = size;
+  ctx.moveTo(s * 0.1, y);
+  ctx.lineTo(s * 0.3, y);
+  ctx.lineTo(s * 0.4, y - s * 0.25);
+  ctx.lineTo(s * 0.55, y + s * 0.25);
+  ctx.lineTo(s * 0.65, y - s * 0.1);
+  ctx.lineTo(s * 0.75, y);
+  ctx.lineTo(s * 0.9, y);
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = Math.max(1.5, size * 0.04);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+
+  // PP text
+  if (size >= 48) {
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.font = `bold ${size * 0.22}px -apple-system, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('PP', size / 2, size * 0.82);
+  }
+
+  return c;
+}
+
+['16','48','128'].forEach(s => {
+  const size = parseInt(s);
+  const canvas = draw('c' + s, size);
+  document.getElementById('dl' + s).href = canvas.toDataURL('image/png');
+});
+</script>
+</body>
+</html>

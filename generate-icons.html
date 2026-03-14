@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Policy Pulse Icon Generator</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; padding: 40px; text-align: center; }
+  h1 { color: #1e3a5f; }
+  .icon-container { display: inline-block; margin: 20px; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  canvas { display: block; margin: 0 auto 12px; }
+  a.download { display: inline-block; padding: 10px 24px; background: #1e3a5f; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 600; }
+  a.download:hover { background: #2a4f7f; }
+  p.label { font-size: 14px; color: #666; margin: 4px 0 12px; }
+</style>
+</head>
+<body>
+
+<h1>Policy Pulse &mdash; PWA Icon Generator</h1>
+<p>Click the download buttons to save each icon as a PNG file.</p>
+
+<div class="icon-container">
+  <canvas id="icon192" width="192" height="192"></canvas>
+  <p class="label">192 &times; 192</p>
+  <a class="download" id="dl192" download="icon-192.png">Download icon-192.png</a>
+</div>
+
+<div class="icon-container">
+  <canvas id="icon512" width="512" height="512"></canvas>
+  <p class="label">512 &times; 512</p>
+  <a class="download" id="dl512" download="icon-512.png">Download icon-512.png</a>
+</div>
+
+<script>
+function drawIcon(canvas) {
+  const s = canvas.width;
+  const ctx = canvas.getContext('2d');
+  const u = s / 512; // unit scale so design is resolution-independent
+
+  // Rounded-rect background
+  const r = 64 * u;
+  ctx.beginPath();
+  ctx.moveTo(r, 0);
+  ctx.lineTo(s - r, 0);
+  ctx.quadraticCurveTo(s, 0, s, r);
+  ctx.lineTo(s, s - r);
+  ctx.quadraticCurveTo(s, s, s - r, s);
+  ctx.lineTo(r, s);
+  ctx.quadraticCurveTo(0, s, 0, s - r);
+  ctx.lineTo(0, r);
+  ctx.quadraticCurveTo(0, 0, r, 0);
+  ctx.closePath();
+  ctx.fillStyle = '#1e3a5f';
+  ctx.fill();
+
+  // Pulse / heartbeat line
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 14 * u;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  const cy = s * 0.50; // vertical center of pulse (centered)
+  const amp = 90 * u;  // peak amplitude (larger without text)
+  const points = [
+    [60 * u,  cy],
+    [130 * u, cy],
+    [165 * u, cy - amp * 0.3],
+    [195 * u, cy + amp * 0.4],
+    [220 * u, cy - amp * 1.1],   // big peak up
+    [250 * u, cy + amp * 0.85],  // big dip down
+    [275 * u, cy - amp * 0.25],
+    [310 * u, cy + amp * 0.15],
+    [340 * u, cy],
+    [452 * u, cy],
+  ];
+
+  ctx.beginPath();
+  ctx.moveTo(points[0][0], points[0][1]);
+  for (let i = 1; i < points.length; i++) {
+    ctx.lineTo(points[i][0], points[i][1]);
+  }
+  ctx.stroke();
+
+  // Small dot at start and end of line
+  [points[0], points[points.length - 1]].forEach(([x, y]) => {
+    ctx.beginPath();
+    ctx.arc(x, y, 5 * u, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+  });
+
+}
+
+// Render both sizes
+const c192 = document.getElementById('icon192');
+const c512 = document.getElementById('icon512');
+drawIcon(c192);
+drawIcon(c512);
+
+// Set download hrefs
+document.getElementById('dl192').href = c192.toDataURL('image/png');
+document.getElementById('dl512').href = c512.toDataURL('image/png');
+</script>
+</body>
+</html>

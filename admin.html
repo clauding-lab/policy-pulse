@@ -384,7 +384,7 @@ function emptyCircular() {
     issued_date: '', effective_date: '', department: '',
     source_url: '', pdf_url_en: '', pdf_url_bn: '',
     pdf_storage_path: '', full_text: '', status: 'active',
-    superseded_by: '',
+    superseded_by: '', plain_summary: '', expert_insight: '',
   };
 }
 
@@ -392,6 +392,8 @@ function emptyCircular() {
 function CircularForm({ initial, tags, selectedTagIds, onSave, onCancel, saving }) {
   const [form, setForm] = useState(initial || emptyCircular());
   const [selTags, setSelTags] = useState(selectedTagIds || []);
+  const [generating, setGenerating] = useState(false);
+  const [genError, setGenError] = useState('');
 
   useEffect(() => {
     setForm(initial || emptyCircular());
@@ -407,6 +409,32 @@ function CircularForm({ initial, tags, selectedTagIds, onSave, onCancel, saving 
   const handleSubmit = (e) => {
     e.preventDefault();
     onSave(form, selTags);
+  };
+
+  const handleGenerateAI = async () => {
+    if (!initial?.id) {
+      setGenError('Save the circular first, then generate AI analysis.');
+      return;
+    }
+    setGenerating(true);
+    setGenError('');
+    try {
+      const resp = await fetch(`${SUPABASE_URL}/functions/v1/generate-analysis`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-secret': ADMIN_PASSWORD,
+        },
+        body: JSON.stringify({ circular_id: initial.id }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Generation failed');
+      set('plain_summary', data.plain_summary);
+      set('expert_insight', data.expert_insight);
+    } catch (err) {
+      setGenError(err.message);
+    }
+    setGenerating(false);
   };
 
   return (
@@ -487,6 +515,34 @@ function CircularForm({ initial, tags, selectedTagIds, onSave, onCancel, saving 
       <div className="form-group">
         <label>Full Text</label>
         <textarea className="form-input" style={{ minHeight: 150 }} value={form.full_text} onChange={e => set('full_text', e.target.value)} placeholder="Full text content of the circular..." />
+      </div>
+
+      <div style={{ border: '1px solid var(--border)', borderRadius: 8, padding: 16, marginTop: 8, marginBottom: 8, background: 'var(--bg)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <label style={{ fontWeight: 700, fontSize: 13, color: '#8b5cf6', margin: 0 }}>AI Analysis</label>
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={handleGenerateAI}
+            disabled={generating}
+            style={{ gap: 6, display: 'flex', alignItems: 'center' }}
+          >
+            {generating ? (
+              <><span className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} /> Generating...</>
+            ) : (
+              <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v4m0 12v4m10-10h-4M6 12H2m15.07-7.07l-2.83 2.83M9.76 14.24l-2.83 2.83m0-10.14l2.83 2.83m4.48 4.48l2.83 2.83"/></svg> Generate AI Analysis</>
+            )}
+          </button>
+        </div>
+        {genError && <p style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 8 }}>{genError}</p>}
+        <div className="form-group">
+          <label>Plain Summary <span style={{ fontWeight: 400, color: 'var(--muted)' }}>(What this means for your bank)</span></label>
+          <textarea className="form-input" style={{ minHeight: 80 }} value={form.plain_summary} onChange={e => set('plain_summary', e.target.value)} placeholder="AI-generated or manual plain-language summary..." />
+        </div>
+        <div className="form-group" style={{ marginBottom: 0 }}>
+          <label>Expert Insight</label>
+          <textarea className="form-input" style={{ minHeight: 80 }} value={form.expert_insight} onChange={e => set('expert_insight', e.target.value)} placeholder="AI-generated or manual expert analysis..." />
+        </div>
       </div>
 
       {tags.length > 0 && (
@@ -1018,6 +1074,11 @@ function App() {
                                     <span style={{ marginLeft: 8, color: c.status === 'superseded' ? 'var(--danger)' : '#d97706', fontWeight: 600, textTransform: 'uppercase', fontSize: 10 }}>
                                       {c.status}
                                     </span>
+                                  )}
+                                  {c.plain_summary && c.expert_insight ? (
+                                    <span style={{ marginLeft: 8, color: '#10b981', fontSize: 10, fontWeight: 600 }}>AI ✓</span>
+                                  ) : (
+                                    <span style={{ marginLeft: 8, color: '#f59e0b', fontSize: 10, fontWeight: 600 }}>No AI</span>
                                   )}
                                 </div>
                               </div>
